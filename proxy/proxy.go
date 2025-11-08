@@ -50,6 +50,7 @@ func routerDirector(req *httputil.ProxyRequest) {
 		return
 	}
 
+	req.Out.Host = targetURL.Host
 	req.Out.URL = targetURL
 	req.SetXForwarded()
 }
