@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -31,10 +32,10 @@ var (
 	HTTP HttpLogger
 )
 
-func SetUp(root string) error {
-	logFolder := root + "/log"
+func SetUp(root string) (func(), error) {
+	logFolder := filepath.Join(root, "log")
 	appFileLogger := &lumberjack.Logger{
-		Filename:  logFolder + "/app.log",
+		Filename:  filepath.Join(logFolder, "app.log"),
 		MaxSize:   100,
 		MaxAge:    1,
 		LocalTime: true,
@@ -48,7 +49,7 @@ func SetUp(root string) error {
 	initApp(appHandler)
 
 	httpFileLogger := &lumberjack.Logger{
-		Filename:  logFolder + "/http.log",
+		Filename:  filepath.Join(logFolder, "http.log"),
 		MaxSize:   100,
 		MaxAge:    1,
 		LocalTime: true,
@@ -59,7 +60,10 @@ func SetUp(root string) error {
 		Level:     nil,
 	})
 	initHttp(textHandler)
-	return nil
+	return func() {
+		_ = httpFileLogger.Close()
+		_ = appFileLogger.Close()
+	}, nil
 }
 
 func initHttp(textHandler *slog.TextHandler) {
