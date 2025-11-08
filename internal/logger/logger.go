@@ -1,9 +1,12 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type HttpLogger struct {
@@ -30,21 +33,28 @@ var (
 
 func SetUp(root string) error {
 	logFolder := root + "/log"
-	file, err := os.OpenFile(logFolder+"/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		return nil
+	appFileLogger := &lumberjack.Logger{
+		Filename:  logFolder + "/app.log",
+		MaxSize:   100,
+		MaxAge:    1,
+		LocalTime: true,
+		Compress:  true,
 	}
-	handler := slog.NewTextHandler(file, &slog.HandlerOptions{
+	multiWriter := io.MultiWriter(os.Stdout, appFileLogger)
+	appHandler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
 		AddSource: true,
 		Level:     nil,
 	})
-	initApp(handler)
+	initApp(appHandler)
 
-	file2, err := os.OpenFile(logFolder+"/middle.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		return err
+	httpFileLogger := &lumberjack.Logger{
+		Filename:  logFolder + "/http.log",
+		MaxSize:   100,
+		MaxAge:    1,
+		LocalTime: true,
+		Compress:  true,
 	}
-	textHandler := slog.NewTextHandler(file2, &slog.HandlerOptions{
+	textHandler := slog.NewTextHandler(httpFileLogger, &slog.HandlerOptions{
 		AddSource: false,
 		Level:     nil,
 	})
@@ -58,8 +68,8 @@ func initHttp(textHandler *slog.TextHandler) {
 	}
 }
 
-func initApp(handler *slog.TextHandler) {
+func initApp(textHandler slog.Handler) {
 	App = AppLogger{
-		slog.New(handler),
+		slog.New(textHandler),
 	}
 }
