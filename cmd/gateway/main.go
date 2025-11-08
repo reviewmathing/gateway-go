@@ -16,7 +16,8 @@ import (
 )
 
 func main() {
-	dir, err := os.Getwd()
+	dir, err := os.Executable()
+	dir = filepath.Dir(dir)
 	if err != nil {
 		log.Fatal("Failed to get working directory:", err)
 	}
