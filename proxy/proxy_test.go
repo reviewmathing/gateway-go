@@ -2,22 +2,20 @@ package proxy_test
 
 import (
 	"fmt"
+	"gateway-go/internal/logger"
 	"gateway-go/internal/router"
 	"gateway-go/proxy"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-// --- 테스트를 위한 Mock (가짜) 라우터 구현 ---
-
-// MockRouter는 테스트용 라우터 구현체입니다.
 type MockRouter struct {
 	Routes map[string]string
 }
 
-// Route는 경로에 따라 미리 정의된 백엔드 URL을 반환합니다.
 func (m *MockRouter) Route(path string) (string, bool) {
 	// 실제 게이트웨이에서는 복잡한 로직이 있겠지만, 테스트를 위해 단순 매핑합니다.
 	if target, ok := m.Routes[path]; ok {
@@ -26,12 +24,15 @@ func (m *MockRouter) Route(path string) (string, bool) {
 	return "", false
 }
 
-// --- 테스트 대상 코드 (ProxyHandler, NewProxy, routerDirector 함수가 있다고 가정) ---
+func TestMain(m *testing.M) {
+	logger.TestSetUp()
 
-// *참고: 실제 테스트를 실행하려면 위의 ProxyHandler, NewProxy, routerDirector 함수가
-//       이 테스트 파일이 위치한 'proxy' 패키지 내에 존재해야 합니다.*
+	// 2️⃣ 실제 테스트 실행
+	code := m.Run()
 
-// --- 통합 테스트 함수 ---
+	// 프로그램 종료 코드 반환
+	os.Exit(code)
+}
 
 func TestProxyHandlerIntegration(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

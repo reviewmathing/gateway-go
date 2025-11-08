@@ -1,15 +1,12 @@
 package router
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
-
-var ErrRouteNotFound = errors.New("route not found")
 
 type Router struct {
 	routes []Route // 소문자 (외부 노출 불필요)

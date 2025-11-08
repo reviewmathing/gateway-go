@@ -1,9 +1,21 @@
 package router
 
 import (
+	"gateway-go/internal/logger"
+	"os"
 	"reflect"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	logger.TestSetUp()
+
+	// 2️⃣ 실제 테스트 실행
+	code := m.Run()
+
+	// 프로그램 종료 코드 반환
+	os.Exit(code)
+}
 
 func TestValidRouter(t *testing.T) {
 	yml := `
@@ -75,9 +87,9 @@ routes:
 
 	router, _ := NewRouter([]byte(yml))
 
-	targetPath, err := router.Route("/api/test/test/1")
-	if err != nil {
-		t.Errorf("Route 에러: %v", err)
+	targetPath, ok := router.Route("/api/test/test/1")
+	if !ok {
+		t.Errorf("route실패")
 	}
 
 	if targetPath != "http://localhost:8080/1" {
