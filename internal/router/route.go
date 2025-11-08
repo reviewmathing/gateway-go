@@ -60,20 +60,20 @@ func NewRouter(data []byte) (*Router, error) {
 	return &Router{routes: routesCopy}, nil
 }
 
-func (r *Router) Route(path string) (string, error) {
+func (r *Router) Route(path string) (string, bool) {
 	normalizationPath := normalize(path)
 	route, ok := r.matchRoute(normalizationPath)
 	if !ok {
-		return "", ErrRouteNotFound
+		return "", false
 	}
 
 	target := route.Target
 	if route.Prefix == "/" {
-		return target + normalizationPath, nil
+		return target + normalizationPath, true
 	}
 
 	after := normalizationPath[len(route.Prefix):]
-	return target + after, nil
+	return target + after, true
 }
 
 func (r Router) matchRoute(path string) (Route, bool) {
