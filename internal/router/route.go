@@ -36,20 +36,20 @@ func NewRouter(data []byte) (*Router, error) {
 			return nil, fmt.Errorf("invalid route: prefix=%q target=%q",
 				route.Prefix, route.Target)
 		}
-		if !isHTTPSScheme(route.Target) {
+		if !isHTTPScheme(route.Target) {
 			return nil, fmt.Errorf("target is not http scheme: target=%q", route.Target)
 		}
-		if seen[normalization(route.Prefix)] {
+		if seen[normalize(route.Prefix)] {
 			return nil, fmt.Errorf("duplicate route prefix: %q", route.Prefix)
 		}
-		seen[normalization(route.Prefix)] = true
+		seen[normalize(route.Prefix)] = true
 	}
 
 	routesCopy := make([]Route, len(config.Routes))
 	for i, route := range config.Routes {
 		routesCopy[i] = Route{
-			Prefix: normalization(route.Prefix),
-			Target: normalizationSuffix(route.Target),
+			Prefix: normalize(route.Prefix),
+			Target: normalizeSuffix(route.Target),
 		}
 	}
 
@@ -61,7 +61,7 @@ func NewRouter(data []byte) (*Router, error) {
 }
 
 func (r *Router) Route(path string) (string, error) {
-	normalizationPath := normalization(path)
+	normalizationPath := normalize(path)
 	route, ok := r.matchRoute(normalizationPath)
 	if !ok {
 		return "", ErrRouteNotFound
@@ -94,7 +94,7 @@ func (r Router) matchRoute(path string) (Route, bool) {
 	return Route{}, false
 }
 
-func normalizationSuffix(path string) string {
+func normalizeSuffix(path string) string {
 	if path == "/" {
 		return path
 	}
@@ -104,7 +104,7 @@ func normalizationSuffix(path string) string {
 	return strings.TrimSuffix(path, "/")
 }
 
-func normalizationPrefix(path string) string {
+func normalizePrefix(path string) string {
 	if path == "" {
 		return "/"
 	}
@@ -114,10 +114,10 @@ func normalizationPrefix(path string) string {
 	return path
 }
 
-func normalization(path string) string {
-	return normalizationPrefix(normalizationSuffix(path))
+func normalize(path string) string {
+	return normalizePrefix(normalizeSuffix(path))
 }
 
-func isHTTPSScheme(target string) bool {
+func isHTTPScheme(target string) bool {
 	return strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://")
 }
