@@ -8,6 +8,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const RouterConfigName = "config.yml"
+
+const root = "/"
+const pathSeparator = "/"
+
 type Router struct {
 	routes []Route // 소문자 (외부 노출 불필요)
 }
@@ -65,7 +70,7 @@ func (r *Router) Route(path string) (string, bool) {
 	}
 
 	target := route.Target
-	if route.Prefix == "/" {
+	if route.Prefix == root {
 		return target + normalizationPath, true
 	}
 
@@ -83,7 +88,7 @@ func (r Router) matchRoute(path string) (Route, bool) {
 				return route, true
 			}
 
-			if strings.HasPrefix(remainder, "/") {
+			if strings.HasPrefix(remainder, pathSeparator) {
 				return route, true
 			}
 		}
@@ -92,21 +97,22 @@ func (r Router) matchRoute(path string) (Route, bool) {
 }
 
 func normalizeSuffix(path string) string {
-	if path == "/" {
+	if path == root {
 		return path
 	}
 	if path == "" {
-		return "/"
+		return root
 	}
-	return strings.TrimSuffix(path, "/")
+	return strings.TrimSuffix(path, pathSeparator)
 }
 
 func normalizePrefix(path string) string {
 	if path == "" {
-		return "/"
+		return root
 	}
-	if !strings.HasPrefix(path, "/") {
-		return "/" + path
+
+	if !strings.HasPrefix(path, pathSeparator) {
+		return pathSeparator + path
 	}
 	return path
 }
