@@ -1,10 +1,15 @@
 package proxy
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 )
+
+type contextKey string
+
+const targetURLKey contextKey = "targetURL"
 
 type Router interface {
 	Route(path string) (targetURL string, found bool)
@@ -20,29 +25,26 @@ func NewProxy(router Router) ProxyHandler {
 		Router: router,
 		Proxy: httputil.ReverseProxy{
 			Rewrite: func(req *httputil.ProxyRequest) {
-				path, ok := router.Route(req.In.URL.Path)
-
-				if !ok {
-					return
-				}
-
-				routerDirector(path, req)
+				routerDirector(req)
 			},
 		},
 	}
 }
 
 func (p *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, ok := p.Router.Route(r.URL.Path)
+	path, ok := p.Router.Route(r.URL.Path)
 	if !ok {
 		http.NotFound(w, r) // 라우터에 없으면 404
 		return
 	}
 
-	p.Proxy.ServeHTTP(w, r) // Proxy 호출
+	ctx := context.WithValue(r.Context(), targetURLKey, path)
+	r = r.WithContext(ctx)
+	p.Proxy.ServeHTTP(w, r)
 }
 
-func routerDirector(path string, req *httputil.ProxyRequest) {
+func routerDirector(req *httputil.ProxyRequest) {
+	path := req.In.Context().Value(targetURLKey).(string)
 	targetURL, err := url.Parse(path)
 	if err != nil {
 		return
