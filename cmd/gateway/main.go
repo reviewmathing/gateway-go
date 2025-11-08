@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	handler "gateway-go/internal/health"
 	"gateway-go/internal/logger"
 	"gateway-go/internal/router"
 	"gateway-go/proxy"
@@ -36,10 +37,14 @@ func main() {
 
 	newProxy := proxy.NewProxy(newRouter)
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", handler.HealthHandler)
+	mux.Handle("/", &newProxy)
+
 	// HTTP 서버 설정
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: &newProxy,
+		Handler: mux,
 	}
 
 	// 서버를 고루틴에서 실행
