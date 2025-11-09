@@ -1,7 +1,10 @@
 package router
 
 import (
+	"errors"
+	"gateway-go/internal/auth"
 	"gateway-go/internal/logger"
+	"net/http"
 	"os"
 	"reflect"
 	"testing"
@@ -76,20 +79,51 @@ routes:
 	}
 }
 
+type MockProxy struct {
+	AuthType  auth.AuthType
+	ErrorMake bool
+}
+
+func (m MockProxy) Handle(r *http.Request) error {
+	if m.ErrorMake {
+		return errors.New("test error")
+	}
+
+	return nil
+}
+
+func (m MockProxy) GetType() auth.ProxyType {
+	return auth.ProxyType(m.AuthType)
+}
+
 func TestRoute(t *testing.T) {
+
+	auth.Save(MockProxy{
+		AuthType:  auth.JWT,
+		ErrorMake: false,
+	})
+
 	yml := `
 routes:
   - prefix : /api/test
     target : http://localhost:8081
   - prefix : /api/test/test
     target : http://localhost:8080
+    auth: jwt
 `
 
-	router, _ := NewRouter([]byte(yml))
+	router, err := NewRouter([]byte(yml))
+	if err != nil {
+		t.Fatal("router create fail ", err)
+	}
 
-	targetPath, ok := router.Route("/api/test/test/1")
+	targetPath, authType, ok := router.Route("/api/test/test/1")
 	if !ok {
 		t.Errorf("route실패")
+	}
+
+	if authType != "" {
+		t.Fatal("잘못된 인증 타입 ", authType)
 	}
 
 	if targetPath != "http://localhost:8080/1" {

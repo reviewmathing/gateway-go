@@ -16,12 +16,12 @@ type MockRouter struct {
 	Routes map[string]string
 }
 
-func (m *MockRouter) Route(path string) (string, bool) {
+func (m *MockRouter) Route(path string) (string, string, bool) {
 	// 실제 게이트웨이에서는 복잡한 로직이 있겠지만, 테스트를 위해 단순 매핑합니다.
 	if target, ok := m.Routes[path]; ok {
-		return target, true
+		return target, "", true
 	}
-	return "", false
+	return "", "", false
 }
 
 func TestMain(m *testing.M) {
@@ -106,9 +106,15 @@ func TestProxyHandlerIntegrationWithNotMockRouter(t *testing.T) {
 
 	// 2. Mock Router 설정
 	targeturl := backend.URL + "/api/data"
-	yamlStr := fmt.Sprintf(`routes:
+	yamlStr := fmt.Sprintf(
+		`routes:
   - prefix: /api/data
-    target: %s`, targeturl)
+    target: %s
+  - prefix: /api/data2
+    target: %s
+    auth: jwt
+`,
+		targeturl)
 
 	newRouter, _ := router.NewRouter([]byte(yamlStr))
 	proxyHandler := proxy.NewProxy(newRouter)
@@ -143,6 +149,22 @@ func TestProxyHandlerIntegrationWithNotMockRouter(t *testing.T) {
 
 	// --- 테스트 케이스 2: 라우팅 실패 (404 처리) ---
 	t.Run("Route Not Found (404)", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", gateway.URL+"/api/unknown", nil)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+
+		if err != nil {
+			t.Fatalf("프록시 요청 실패: %v", err)
+		}
+		defer resp.Body.Close()
+
+		// ProxyHandler의 ServeHTTP에서 404를 반환했는지 확인
+		if resp.StatusCode != http.StatusNotFound {
+			t.Errorf("상태 코드 불일치. 기대값: 404, 실제값: %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("Route Not Found (401)", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", gateway.URL+"/api/unknown", nil)
 		client := &http.Client{}
 		resp, err := client.Do(req)

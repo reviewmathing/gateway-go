@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"gateway-go/internal/auth"
 	"gateway-go/internal/logger"
 	"net/http"
 	"net/http/httputil"
@@ -13,7 +14,7 @@ type contextKey string
 const targetURLKey contextKey = "targetURL"
 
 type Router interface {
-	Route(path string) (targetURL string, found bool)
+	Route(path string) (targetURL string, authType string, found bool)
 }
 
 type statusCatcherWriter struct {
@@ -43,11 +44,20 @@ func NewProxy(router Router) ProxyHandler {
 }
 
 func (p *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path, ok := p.Router.Route(r.URL.Path)
+	path, authTypeValue, ok := p.Router.Route(r.URL.Path)
 	if !ok {
 		http.NotFound(w, r)
 		logger.HTTP.LogTransaction(*r, http.StatusNotFound)
 		return
+	}
+	authType := auth.ParseAuthType(authTypeValue)
+	if authType != auth.NONE {
+		proxy := auth.Get(string(authType))
+		err := proxy.Handle(r)
+		if err != nil {
+			w.WriteHeader(401)
+			return
+		}
 	}
 
 	ctx := context.WithValue(r.Context(), targetURLKey, path)

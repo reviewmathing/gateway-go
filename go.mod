@@ -3,6 +3,7 @@ module gateway-go
 go 1.25
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )

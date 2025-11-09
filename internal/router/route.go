@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"gateway-go/internal/auth"
 	"sort"
 	"strings"
 
@@ -18,8 +19,9 @@ type Router struct {
 }
 
 type Route struct {
-	Prefix string `yaml:"prefix"`
-	Target string `yaml:"target"`
+	Prefix   string `yaml:"prefix"`
+	Target   string `yaml:"target"`
+	AuthType string `yaml:"auth"`
 }
 
 func NewRouter(data []byte) (*Router, error) {
@@ -45,6 +47,14 @@ func NewRouter(data []byte) (*Router, error) {
 			return nil, fmt.Errorf("duplicate route prefix: %q", route.Prefix)
 		}
 		seen[normalize(route.Prefix)] = true
+
+		authType := route.AuthType
+		if authType != "" {
+			proxy := auth.Get(authType)
+			if proxy == nil {
+				return nil, fmt.Errorf("AuthProxy is not setting %s", authType)
+			}
+		}
 	}
 
 	routesCopy := make([]Route, len(config.Routes))
@@ -62,20 +72,20 @@ func NewRouter(data []byte) (*Router, error) {
 	return &Router{routes: routesCopy}, nil
 }
 
-func (r *Router) Route(path string) (string, bool) {
+func (r *Router) Route(path string) (string, string, bool) {
 	normalizationPath := normalize(path)
 	route, ok := r.matchRoute(normalizationPath)
 	if !ok {
-		return "", false
+		return "", "", false
 	}
 
 	target := route.Target
 	if route.Prefix == root {
-		return target + normalizationPath, true
+		return target + normalizationPath, route.AuthType, true
 	}
 
 	after := normalizationPath[len(route.Prefix):]
-	return target + after, true
+	return target + after, route.AuthType, true
 }
 
 func (r Router) matchRoute(path string) (Route, bool) {
