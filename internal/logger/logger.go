@@ -32,28 +32,49 @@ type Config interface {
 	httpHandler() (slog.Handler, func(), error)
 }
 
+// SetUp initializes all loggers with the given config.
+// Returns a cleanup function that safely closes all open log files.
+// The cleanup function is safe to call even if initialization failed.
 func SetUp(config Config) (func(), error) {
-	handler, appCloser, err := config.appHandler()
+	var appCloser func()
+	var httpCloser func()
+
+	handler, closer, err := config.appHandler()
 	if err != nil {
-		return nil, err
+		// Return safe cleanup even on error
+		return func() {}, err
 	}
+	appCloser = closer
 	initApp(handler)
 
-	httpHandler, httpCloser, err := config.httpHandler()
+	httpHandler, closer, err := config.httpHandler()
 	if err != nil {
-		return nil, err
+		// Return safe cleanup even on error
+		return func() {
+			if appCloser != nil {
+				appCloser()
+			}
+		}, err
 	}
+	httpCloser = closer
+
 	if httpHandler != nil {
 		initHttp(httpHandler)
 	}
+
+	// Always return valid cleanup function
 	return func() {
-		appCloser()
+		if appCloser != nil {
+			appCloser()
+		}
 		if httpCloser != nil {
 			httpCloser()
 		}
 	}, nil
 }
 
+// initHttp initializes HTTP logger with the given handler.
+// handler must not be nil (checked by caller).
 func initHttp(handler slog.Handler) {
 	HTTP = HttpLogger{
 		slog.New(handler),

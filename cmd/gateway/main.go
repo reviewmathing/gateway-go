@@ -18,22 +18,21 @@ import (
 func main() {
 	logConfigData, err := config.GetData(logger.LogConfigFileName)
 	if err != nil {
-		log.Fatal("log config read fail", err)
+		log.Fatal("Failed to read log config:", err)
 	}
 	logConfig, err := logger.ReadConfig(logConfigData)
 	if err != nil {
-		log.Fatal("Failed to get Log Config", err)
+		log.Fatal("Failed to parse log config:", err)
 	}
 	close, err := logger.SetUp(logConfig)
-
 	if err != nil {
-		log.Fatal("Log init Fail ", err)
+		log.Fatal("Failed to initialize logger:", err)
 	}
 	defer close()
 
 	routerConfigData, err := config.GetData(router.RouterConfigName)
 	if err != nil {
-		log.Fatal("Failed to get Router Config", err)
+		log.Fatal("Failed to read router config:", err)
 	}
 	newRouter, err := router.NewRouter(routerConfigData)
 	if err != nil {

@@ -2,6 +2,7 @@ package logger
 
 import (
 	"errors"
+	"fmt"
 	"gateway-go/internal/util"
 	"io"
 	"log/slog"
@@ -14,6 +15,13 @@ import (
 )
 
 const LogConfigFileName = "log.yml"
+
+const (
+	// Lumberjack default settings
+	defaultMaxSize  = 100 // MB
+	defaultMaxAge   = 1   // days
+	defaultCompress = true
+)
 
 type LogFormat string
 
@@ -140,15 +148,15 @@ func (yls *ymlLogSetting) getWriter() (io.WriteCloser, error) {
 	}
 	dir, err := util.GetRootDir()
 	if err != nil {
-		return nil, errors.New("log path load fail")
+		return nil, fmt.Errorf("failed to get root directory: %w", err)
 	}
 	join := filepath.Join(dir, "log", yls.File.FileName+".log")
 	logger := lumberjack.Logger{
 		Filename:  join,
-		MaxSize:   100,
-		MaxAge:    1,
+		MaxSize:   defaultMaxSize,
+		MaxAge:    defaultMaxAge,
 		LocalTime: true,
-		Compress:  true,
+		Compress:  defaultCompress,
 	}
 	return &logger, nil
 }
