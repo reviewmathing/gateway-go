@@ -48,7 +48,9 @@ func SetUp(config Config) (func(), error) {
 	}
 	return func() {
 		appCloser()
-		httpCloser()
+		if httpCloser != nil {
+			httpCloser()
+		}
 	}, nil
 }
 

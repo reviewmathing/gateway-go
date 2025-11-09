@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	config2 "gateway-go/internal/config"
+	"gateway-go/internal/config"
 	handler "gateway-go/internal/health"
 	"gateway-go/internal/logger"
 	"gateway-go/internal/router"
@@ -16,26 +16,24 @@ import (
 )
 
 func main() {
-	logConfigData, err := config2.GetData(logger.LogConfigFileName)
+	logConfigData, err := config.GetData(logger.LogConfigFileName)
 	if err != nil {
 		log.Fatal("log config read fail", err)
 	}
-	config, err := logger.ReadConfig(logConfigData)
+	logConfig, err := logger.ReadConfig(logConfigData)
 	if err != nil {
 		log.Fatal("Failed to get Log Config", err)
-		return
 	}
-	Close, err := logger.SetUp(config)
-	defer Close()
+	close, err := logger.SetUp(logConfig)
+
 	if err != nil {
 		log.Fatal("Log init Fail ", err)
-		return
 	}
+	defer close()
 
-	routerConfigData, err := config2.GetData(router.RouterConfigName)
+	routerConfigData, err := config.GetData(router.RouterConfigName)
 	if err != nil {
 		log.Fatal("Failed to get Router Config", err)
-		return
 	}
 	newRouter, err := router.NewRouter(routerConfigData)
 	if err != nil {
@@ -60,7 +58,7 @@ func main() {
 		logger.App.Info("Gateway server starting", "address", ":8080")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.App.Error("Server error", "error", err)
-			os.Exit(0)
+			os.Exit(1)
 		}
 	}()
 

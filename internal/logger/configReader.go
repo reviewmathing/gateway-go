@@ -70,7 +70,9 @@ func (lc logConfig) appHandler() (slog.Handler, func(), error) {
 	}
 
 	return handler, func() {
-		_ = appWriter.Close()
+		if appWriter != nil {
+			_ = appWriter.Close()
+		}
 		_ = defaultWriter.Close()
 	}, nil
 }

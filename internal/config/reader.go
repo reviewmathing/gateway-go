@@ -37,5 +37,5 @@ func GetRootPath(fileName string) (string, error) {
 			return configPath, nil
 		}
 	}
-	return "", fmt.Errorf(fileName, " not found in any known location")
+	return "", fmt.Errorf("%s not found in any known location", fileName)
 }
