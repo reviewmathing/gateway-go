@@ -2,7 +2,7 @@ package logger
 
 import (
 	"errors"
-	config2 "gateway-go/internal/config"
+	"gateway-go/internal/util"
 	"io"
 	"log/slog"
 	"os"
@@ -138,12 +138,13 @@ func (yls *ymlLogSetting) getWriter() (io.WriteCloser, error) {
 	if yls == nil || yls.File == nil {
 		return defaultWrite(), nil
 	}
-	dir, err := config2.GetRootPath("")
+	dir, err := util.GetRootDir()
 	if err != nil {
 		return nil, errors.New("log path load fail")
 	}
+	join := filepath.Join(dir, "log/", yls.File.FileName+".log")
 	logger := lumberjack.Logger{
-		Filename:  filepath.Join(filepath.Dir(dir), "log/", yls.File.FileName+".log"),
+		Filename:  join,
 		MaxSize:   100,
 		MaxAge:    1,
 		LocalTime: true,

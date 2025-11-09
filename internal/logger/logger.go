@@ -9,7 +9,7 @@ type HttpLogger struct {
 	*slog.Logger
 }
 
-func (hl *HttpLogger) LogTransection(r http.Request, status int) {
+func (hl *HttpLogger) LogTransaction(r http.Request, status int) {
 	hl.Info("HTTP Request",
 		slog.String("method", r.Method),
 		slog.String("path", r.URL.Path),

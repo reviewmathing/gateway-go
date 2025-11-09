@@ -46,7 +46,7 @@ func (p *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path, ok := p.Router.Route(r.URL.Path)
 	if !ok {
 		http.NotFound(w, r)
-		logger.HTTP.LogTransection(*r, http.StatusNotFound)
+		logger.HTTP.LogTransaction(*r, http.StatusNotFound)
 		return
 	}
 
@@ -57,7 +57,7 @@ func (p *ProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status:         -1,
 	}
 	p.Proxy.ServeHTTP(&writer, r)
-	logger.HTTP.LogTransection(*r, writer.status)
+	logger.HTTP.LogTransaction(*r, writer.status)
 }
 
 func routerDirector(req *httputil.ProxyRequest) {
