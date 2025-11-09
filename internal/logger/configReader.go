@@ -142,7 +142,7 @@ func (yls *ymlLogSetting) getWriter() (io.WriteCloser, error) {
 	if err != nil {
 		return nil, errors.New("log path load fail")
 	}
-	join := filepath.Join(dir, "log/", yls.File.FileName+".log")
+	join := filepath.Join(dir, "log", yls.File.FileName+".log")
 	logger := lumberjack.Logger{
 		Filename:  join,
 		MaxSize:   100,
